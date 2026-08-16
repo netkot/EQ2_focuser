@@ -1,0 +1,8 @@
+# Sensitive local configuration
+secrets.h
+
+# Build artifacts
+build/
+
+# Local tooling config
+.claude/

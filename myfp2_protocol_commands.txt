@@ -1,0 +1,144 @@
+myFP2 Comms Protocol Commands
+================================
+
+GENERAL
+-------
+Commands begin with : and end with #
+Example:
+:00#
+
+COMMANDS BY NUMBER
+------------------
+
+:00#              Get current focuser position
+:01#              Get motor moving status
+:02#              Get Controller Response to "Are we connected"
+:03#              Get Controller firmware version string
+:04#              Get firmware version string (program name, version)
+:05xxxxxx#        Set new target position and move
+:06#              Get temperature
+:07xxxxxx#        Set MaxStep
+:08#              Get MaxStep
+:09x#             Get inoutledmode
+:10#              Get MaxIncrement
+:11#              Get Coil Power setting
+:12x#             Set Coil Power
+:13#              Get reverse direction setting
+:14x#             Set reverse direction setting
+:15X#             Set Motor speed
+:16#              Display in Celsius
+:17#              Display in Fahrenheit
+:18x#             Enable/disable user step size return
+:19xxxx#          Set step size value
+:20xx#            Set temperature resolution
+:21#              Get temperature probe resolution
+:22xxx#           Set temperature coefficient
+:23x#             Set temperature compensation ON/OFF
+:24#              Get state of Temperature Compensation
+:25#              Get if Temperature Compensation available
+:26#              Get Temperature Coefficient
+:27#              Stop a move
+:28#              Home the motor to position 0
+:29#              Get stepmode
+:30xx#            Set stepmode
+:31xxxxxx#        Set current focuser position
+:32#              Get if Step size enabled
+:33#              Get Step size in microns
+:34#              Get LCD display time
+:35xxxx#          Set page display time
+:36x#             Disable/Enable Display
+:37#              Get Display status
+:38#              Get Temperature Mode
+:39#              Get target motor position
+:40#              Reset controller
+:41#              Set in-out LED mode
+:42#              Reset focuser to defaults
+:43#              Get motorspeed
+:44#              Get Park enable state
+:45x#             Set Park enable state
+:46#              Get in-out LED enable state
+:47x#             Set in-out LED enable state
+:48#              Save settings in EEPROM
+:49#              Get Focuser Type
+:50#              Get Home Position Switch enabled state
+:51#              Get ESP32 WiFi Controller IP Address
+:52#              Get Park status
+:53#              Get number of display pages
+:54#              Get ESP32 WiFi Controller SSID
+:55#              Get motor speed delay
+:56xxxx#          Set motor speed delay
+:57#              Get pushbutton enable state
+:58x#             Set pushbutton enable state
+:59#              Get Park time
+:60xx#            Set Park time
+:61xx#            Set LCD position update while moving
+:62#              Get LCD position update while moving
+:63#              Get status of home position switch
+:64xxx#           Move specified number of steps
+:65x#             Set jogging state
+:66#              Get jogging state
+:67x#             Set jogging direction
+:68#              Get jogging direction
+:69#              Get push button steps
+:70x#             Set push button steps
+:71xxx#           Set DelayAfterMove time
+:72#              Get DelayAfterMove time
+:73x#             Disable/Enable backlash IN
+:74#              Get backlash IN enabled status
+:75x#             Disable/Enable backlash OUT
+:76#              Get backlash OUT enabled status
+:77xx#            Set backlash steps IN
+:78#              Get backlash steps IN
+:79xx#            Set backlash steps OUT
+:80#              Get backlash steps OUT
+:81#              Get STALL_VALUE
+:82xxx#           Set STALL_VALUE
+:83#              Get if temperature probe exists
+:84#              Set Nextion Page
+:85xxx#           Set Serial Port Speed (Nextion)
+:86#              Get Serial Port Speed (Nextion)
+:87#              Get temp comp direction
+:88x#             Set temp comp direction
+:89#              Get stepper power
+:90xyyyy#         Set preset position
+:91x#             Get preset value
+:92xxx#           Set OLED page display option
+:93#              Get OLED page display option
+:94#              Get TMC Interpolation state
+:95b#             Set TMC Interpolation state
+:96#              Get Firmware Major/Minor version
+:97#              Get Display Type
+:98#              Get Network Signal Strength RSSI
+:99x#             Set Home Position Switch enable status
+
+ESP32 COMMANDS
+--------------
+
+:A0#              Get joystick1 enable state
+:A1x#             Set joystick1 enable state
+:A2#              Get joystick2 enable state
+:A3x#             Set joystick2 enable state
+:A4#              Get temp probe enabled state
+:A5x#             Set temp probe enabled state
+:A6#              Get Alpaca Server enabled state
+:A7x#             Set Alpaca Server enabled state
+:A8#              Get Alpaca Server Start/Stop state
+:A9x#             Set Alpaca Server Start/Stop state
+
+:B0#              Get Web Server enabled state
+:B1x#             Set Web Server enabled state
+:B2#              Get Web Server Start/Stop state
+:B3x#             Set Web Server Start/Stop state
+:B4#              Get Management Server enabled state
+:B5x#             Set Management Server enabled state
+:B6#              Get Management Server Start/Stop state
+:B7x#             Set Management Server Start/Stop state
+:B8#              Get cntlr_focuser.jsn
+:B9#              Get cntlr_board.jsn
+
+:C0#              Get OTA State
+:C1x#             Set OTA State
+:C2#              Get OTA Status
+:C3x#             Set OTA Status
+:C4#              Get Display Brightness
+:C5xxx#           Set Display Brightness
