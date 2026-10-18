@@ -90,7 +90,7 @@ const byte EEPROM_MAGIC = 0xA5;
 // ============================================================
 long  currentPos   = 0;
 long  targetPos    = 0;
-long  maxStep      = 8000;
+long  maxStep      = 9000;
 bool  isMoving     = false;
 int   stepMode     = 2;           // 1=full, 2=half
 int   motorSpeedUs = SPEED_MED;   // µs between steps
@@ -121,6 +121,8 @@ int   delayAfterMove   = 0;        // ms
 long  presets[10]      = {0};       // :90x / :91x
 int   lastMoveDir      = 0;         // +1=OUT, -1=IN, 0=none
 long  backlashTarget   = -1L;       // >=0 → phase-2 target pending
+bool  homingActive     = false;     // driving IN against the mechanical stop
+long  homingStepsLeft  = 0;
 
 // internal step tracking
 int   currentStepIdx = 0;
@@ -190,7 +192,7 @@ void eepromLoad() {
 
   // sanity checks
   if (currentPos < 0 || currentPos > 200000)    currentPos   = 0;
-  if (maxStep < 100  || maxStep > 200000)        maxStep      = 8000;
+  if (maxStep < 100  || maxStep > 200000)        maxStep      = 9000;
   if (motorSpeedUs < 600 || motorSpeedUs > 5000) motorSpeedUs = SPEED_MED;
   if (stepMode < 1   || stepMode > 8)            stepMode     = 2;
   if (stepSizeMicrons <= 0)                      stepSizeMicrons = 1.0f;
@@ -227,6 +229,25 @@ void motorLoop() {
   if (!isMoving) return;
 
   unsigned long now = micros();
+  if (homingActive) {
+    // no limit switches: overrun the inner stop at slow speed, the motor
+    // simply skips steps against it, then that point becomes position 0
+    if (now - lastStepUs < (unsigned long)SPEED_SLOW) return;
+    if (homingStepsLeft <= 0) {
+      homingActive = false;
+      isMoving     = false;
+      setCurrentPos(0);
+      if (!coilPower) motorOff();
+      eepromScheduleSave();
+      return;
+    }
+    motorStep(-1);
+    if (currentPos > 0) currentPos--;
+    targetPos = 0;
+    homingStepsLeft--;
+    lastStepUs = now;
+    return;
+  }
   if (now - lastStepUs < (unsigned long)motorSpeedUs) return;
 
   if (currentPos == targetPos) {
@@ -250,6 +271,7 @@ void motorLoop() {
 }
 
 void moveTo(long pos) {
+  homingActive = false;
   if (pos < 0)       pos = 0;
   if (pos > maxStep) pos = maxStep;
 
@@ -282,6 +304,7 @@ void moveRelative(long steps) {
 }
 
 void stopMotor() {
+  homingActive   = false;
   isMoving       = false;
   targetPos      = currentPos;
   backlashTarget = -1L;
@@ -296,6 +319,16 @@ void setCurrentPos(long pos) {
   currentPos  = pos;
   targetPos   = pos;
   lastMoveDir = 0;
+}
+
+// Calibrate zero against the mechanical IN stop (no limit switches)
+void calibrateZero() {
+  backlashTarget  = -1L;
+  homingStepsLeft = currentPos + maxStep / 10;
+  homingActive    = true;
+  isMoving        = true;
+  targetPos       = 0;
+  parked          = false;
 }
 
 // ============================================================
@@ -544,7 +577,7 @@ void dispatchCommand(const String& raw) {
   // ── :42# Reset focuser to defaults (no reply)
   } else if (pfx == "42") {
     if (!isMoving) {
-      currentPos = 0; targetPos = 0; maxStep = 8000;
+      currentPos = 0; targetPos = 0; maxStep = 9000;
       motorSpeedUs = SPEED_MED; motorSpeed = 1;
       stepMode = 2; coilPower = false; reverseDir = true;
       backlashInSteps = 0; backlashOutSteps = 0;
@@ -978,6 +1011,7 @@ void webHandleStatus() {
   json += "\"pos\":"     + String(currentPos)   + ",";
   json += "\"target\":"  + String(targetPos)    + ",";
   json += "\"moving\":"  + String(isMoving)     + ",";
+  json += "\"homing\":"  + String(homingActive) + ",";
   json += "\"speed\":"   + String(motorSpeedUs) + ",";
   json += "\"temp\":"    + String(temperature)  + ",";
   json += "\"maxstep\":" + String(maxStep)      + ",";
@@ -1012,13 +1046,18 @@ void webHandleHome() {
   webServer.send(200, "text/plain", "OK");
 }
 
+void webHandleCalibrate() {
+  calibrateZero();
+  webServer.send(200, "text/plain", "OK");
+}
+
 void webHandleSave() {
   eepromScheduleSave();
   webServer.send(200, "text/plain", "OK");
 }
 
 void webHandleReset() {
-  currentPos = 0; targetPos = 0; maxStep = 8000;
+  currentPos = 0; targetPos = 0; maxStep = 9000;
   motorSpeedUs = SPEED_MED; motorSpeed = 1;
   stepMode = 2; coilPower = false; reverseDir = true;
   eepromScheduleSave();
@@ -1072,6 +1111,7 @@ void setup() {
   webServer.on("/stop",     webHandleStop);
   webServer.on("/zero",     webHandleZero);
   webServer.on("/home",     webHandleHome);
+  webServer.on("/calibrate", webHandleCalibrate);
   webServer.on("/save",     webHandleSave);
   webServer.on("/reset",    webHandleReset);
   webServer.on("/setspeed", webHandleSetSpeed);
