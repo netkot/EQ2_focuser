@@ -96,7 +96,7 @@ int   stepMode     = 2;           // 1=full, 2=half
 int   motorSpeedUs = SPEED_MED;   // µs between steps
 int   motorSpeed   = 1;           // 0=slow, 1=med, 2=fast (matches tcpip protocol)
 bool  coilPower    = false;       // keep coils energised after move?
-bool  reverseDir   = true;
+bool  reverseDir   = false;       // user/client reverse, applied on top of MOTOR_DIR_INVERT
 bool  tempComp     = false;
 int   tempCoeff    = 0;
 bool  tempCompDir  = false;        // false=IN, true=OUT
@@ -215,8 +215,12 @@ void motorOff() {
   motorPins(0, 0, 0, 0);
 }
 
+// Wiring polarity of this focuser: true makes +dir drive the drawtube OUT.
+// Kept out of EEPROM so a client sending :14 0# on connect can't flip it.
+const bool MOTOR_DIR_INVERT = true;
+
 void motorStep(int dir) {
-  if (reverseDir) dir = -dir;
+  if (reverseDir != MOTOR_DIR_INVERT) dir = -dir;
   if (dir > 0) { currentStepIdx = (currentStepIdx + 1) % 8; }
   else          { currentStepIdx = (currentStepIdx + 7) % 8; }
   motorPins(stepSeq[currentStepIdx][0],
@@ -579,7 +583,7 @@ void dispatchCommand(const String& raw) {
     if (!isMoving) {
       currentPos = 0; targetPos = 0; maxStep = 9000;
       motorSpeedUs = SPEED_MED; motorSpeed = 1;
-      stepMode = 2; coilPower = false; reverseDir = true;
+      stepMode = 2; coilPower = false; reverseDir = false;
       backlashInSteps = 0; backlashOutSteps = 0;
       backlashInEn = false; backlashOutEn = false;
       stepSizeMicrons = 1.0f; stepSizeEn = false;
@@ -1059,7 +1063,7 @@ void webHandleSave() {
 void webHandleReset() {
   currentPos = 0; targetPos = 0; maxStep = 9000;
   motorSpeedUs = SPEED_MED; motorSpeed = 1;
-  stepMode = 2; coilPower = false; reverseDir = true;
+  stepMode = 2; coilPower = false; reverseDir = false;
   eepromScheduleSave();
   webServer.send(200, "text/plain", "OK");
 }
