@@ -90,7 +90,10 @@ const byte EEPROM_MAGIC = 0xA5;
 // ============================================================
 long  currentPos   = 0;
 long  targetPos    = 0;
-long  maxStep      = 9000;
+// Mechanical full travel of the drawtube. Clients (ASCOM/N.I.N.A., INDI) send
+// :07 100000# on connect; maxStep may be lowered by them but never above this.
+const long MAX_TRAVEL = 9000;
+long  maxStep      = MAX_TRAVEL;
 bool  isMoving     = false;
 int   stepMode     = 2;           // 1=full, 2=half
 int   motorSpeedUs = SPEED_MED;   // µs between steps
@@ -192,7 +195,7 @@ void eepromLoad() {
 
   // sanity checks
   if (currentPos < 0 || currentPos > 200000)    currentPos   = 0;
-  if (maxStep < 100  || maxStep > 200000)        maxStep      = 9000;
+  if (maxStep < 100  || maxStep > MAX_TRAVEL)     maxStep      = MAX_TRAVEL;
   if (motorSpeedUs < 600 || motorSpeedUs > 5000) motorSpeedUs = SPEED_MED;
   if (stepMode < 1   || stepMode > 8)            stepMode     = 2;
   if (stepSizeMicrons <= 0)                      stepSizeMicrons = 1.0f;
@@ -417,7 +420,8 @@ void dispatchCommand(const String& raw) {
   // ── :07xxxxxx# Set MaxStep (no reply)
   } else if (pfx == "07") {
     long ms = arg.toInt();
-    if (ms > currentPos && ms <= 200000) { maxStep = ms; eepromScheduleSave(); }
+    if (ms > MAX_TRAVEL) ms = MAX_TRAVEL;
+    if (ms > currentPos && ms != maxStep) { maxStep = ms; eepromScheduleSave(); }
 
   // ── :08# Get MaxStep
   } else if (pfx == "08") {
@@ -581,7 +585,7 @@ void dispatchCommand(const String& raw) {
   // ── :42# Reset focuser to defaults (no reply)
   } else if (pfx == "42") {
     if (!isMoving) {
-      currentPos = 0; targetPos = 0; maxStep = 9000;
+      currentPos = 0; targetPos = 0; maxStep = MAX_TRAVEL;
       motorSpeedUs = SPEED_MED; motorSpeed = 1;
       stepMode = 2; coilPower = false; reverseDir = false;
       backlashInSteps = 0; backlashOutSteps = 0;
@@ -1061,7 +1065,7 @@ void webHandleSave() {
 }
 
 void webHandleReset() {
-  currentPos = 0; targetPos = 0; maxStep = 9000;
+  currentPos = 0; targetPos = 0; maxStep = MAX_TRAVEL;
   motorSpeedUs = SPEED_MED; motorSpeed = 1;
   stepMode = 2; coilPower = false; reverseDir = false;
   eepromScheduleSave();
