@@ -1024,7 +1024,12 @@ void webHandleStatus() {
   json += "\"temp\":"    + String(temperature)  + ",";
   json += "\"maxstep\":" + String(maxStep)      + ",";
   json += "\"rssi\":"    + String(WiFi.RSSI())  + ",";
-  json += "\"ip\":\""    + WiFi.localIP().toString() + "\"";
+  json += "\"ip\":\""    + WiFi.localIP().toString() + "\",";
+  json += "\"fw\":\""    + String(FW_VERSION) + "." + String(FW_MINOR_VERSION) + "\",";
+  json += "\"build\":\"" __DATE__ " " __TIME__ "\",";
+  json += "\"up\":"      + String(millis() / 1000)          + ",";
+  json += "\"heap\":"    + String(ESP.getFreeHeap())        + ",";
+  json += "\"blk\":"     + String(ESP.getMaxFreeBlockSize());
   json += "}";
   webServer.send(200, "application/json", json);
 }

@@ -74,6 +74,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
 .ac:active{background:#161b22;color:#e6edf3;}
 .ac.w{grid-column:1/-1;color:#f0883e;border-color:#5a3a1a;}
 .ft{text-align:center;font-size:11px;color:#484f58;margin-top:4px;padding-bottom:8px;}
+.ota summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;
+             align-items:center;font-size:14px;font-weight:700;color:#58a6ff;}
+.ota summary::-webkit-details-marker{display:none;}
+.ota summary:after{content:'\25BC';font-size:10px;color:#6e7681;transition:transform .2s;}
+.ota[open] summary:after{transform:rotate(180deg);}
+.ota[open] summary{margin-bottom:12px;}
+.oi{background:#0d1117;border:1px solid #30363d;border-radius:9px;padding:10px 12px;
+    font-size:12px;color:#8b949e;line-height:1.75;margin-bottom:10px;}
+.oi b{color:#e6edf3;}
+.oi i{font-style:normal;color:#30363d;padding:0 4px;}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3fb950;
+     margin-right:4px;}
+.ob{width:100%;}
+.oh{font-size:11px;color:#484f58;margin-top:8px;}
 </style>
 </head>
 <body>
@@ -220,8 +234,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-seri
   </div>
 </div>
 
+<details class="card ota" open>
+  <summary>&#128260; Firmware Update (OTA)</summary>
+  <div class="oi">
+    <div>Version: <b id="ofw">—</b><i>|</i><span class="dot" id="odot"></span><span id="ost">—</span></div>
+    <div>Build: <b id="obld">—</b><i>|</i>Uptime: <span id="oup">—</span></div>
+    <div>WiFi: <span id="orssi">—</span><i>|</i>Free RAM: <span id="oram">—</span></div>
+  </div>
+  <button class="ac ob" onclick="window.open('/update','_blank')">Open Update Page</button>
+  <div class="oh">Opens the update page in a new tab — upload the compiled .bin firmware there.</div>
+</details>
+
 <div class="ft" id="ft">—</div>
-<div class="ft"><button class="ac" onclick="window.open('/update','_blank')">Open Update Page</button></div>
 
 <script>
 var mx=9000,as=2,ARC=387,CI=515,DT=130;
@@ -282,6 +306,7 @@ function poll(){
     document.getElementById('hip').textContent=d.ip;
     document.getElementById('ft').textContent=
       'Temp: '+d.temp.toFixed(1)+'°C  ·  RSSI: '+d.rssi+' dBm';
+    ota(d);
     var si=[4000,3000,2000].indexOf(d.speed);
     if(si>=0&&si+1!==as){
       as=si+1;
@@ -289,7 +314,27 @@ function poll(){
         document.getElementById('sp'+j).className='sp'+(j===as?' a':'');
       });
     }
-  }).catch(function(){});
+  }).catch(function(){online(false);});
+}
+function online(ok){
+  document.getElementById('odot').style.background=ok?'#3fb950':'#f85149';
+  document.getElementById('ost').textContent=ok?'Ready':'Offline';
+}
+function ota(d){
+  var s=d.up,h=Math.floor(s/3600),m=Math.floor(s%3600/60),up;
+  if(s>=86400)up=Math.floor(s/86400)+'d '+(h%24)+'h';
+  else if(h)up=h+'h '+m+'m';
+  else up=m+'m '+(s%60)+'s';
+  var kb=function(v){return(v/1024).toFixed(1)+' KB';};
+  var rc=d.rssi>=-67?'#3fb950':(d.rssi>=-75?'#d29922':'#f85149');
+  document.getElementById('ofw').textContent=d.fw;
+  document.getElementById('obld').textContent=d.build;
+  document.getElementById('oup').textContent=up;
+  var r=document.getElementById('orssi');
+  r.textContent=d.rssi+' dBm';
+  r.style.color=rc;
+  document.getElementById('oram').textContent=kb(d.heap)+' (max block '+kb(d.blk)+')';
+  online(true);
 }
 setInterval(poll,800);
 poll();
